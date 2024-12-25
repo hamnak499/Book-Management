@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles/index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>Bookshop Management System</title>
+</head>
+<body>
+    <div class="container">
+        <button onclick="window.location.href='home.html'" style="position: absolute; top: 10px; left: 10px;">
+            <i class="fas fa-home"></i>
+        </button>
+        <h1>Bookshop Management System</h1>
+
+        <!-- Add Book Form -->
+        <form id="book-form">
+            <div class="form-group">
+                <label for="author">Author Name</label>
+                <input type="text" id="author" name="author" placeholder="Enter author name" required>
+            </div>
+            <div class="form-group">
+                <label for="book">Book Name</label>
+                <input type="text" id="book" name="book" placeholder="Enter book name" required>
+            </div>
+            <div class="form-group">
+                <label for="isbn">ISBN</label>
+                <input type="text" id="isbn" name="isbn" placeholder="Enter ISBN number" required>
+            </div>
+            <div class="form-group">
+                <label for="shelf">Shelf Number</label>
+                <input type="text" id="shelf" name="shelf" placeholder="Enter shelf number" required>
+            </div>
+            <button type="submit">Add Book</button>
+        </form>
+
+        <!-- Search Book Form -->
+        <div class="search-container">
+            <input type="text" id="search" placeholder="Search by Book Name or ISBN">
+            <button id="search-btn">Search</button>
+        </div>
+        <br><br>
+
+        <!-- Delete Book Form -->
+        <form id="delete-form">
+            <div class="form-group">
+                <input type="text" id="delete-isbn" name="delete-isbn" placeholder="Enter ISBN to delete">
+                <button type="submit">Delete Book</button>
+            </div>
+
+        </form>
+
+        <!-- Book List -->
+        <table id="book-list">
+            <thead>
+                <tr>
+                    <th>Author</th>
+                    <th>Book Name</th>
+                    <th>ISBN</th>
+                    <th>Shelf Number</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Dynamic rows will be added here -->
+            </tbody>
+        </table>
+    </div>
+    <script>
+        document.getElementById('book-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+
+            const response = await fetch('/api/books', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+
+            if (response.ok) {
+                // alert('Book added successfully!');
+                this.reset();
+                fetchBooks();
+            } else {
+                alert('Failed to add book.');
+            }
+        });
+
+        document.getElementById('search-btn').addEventListener('click', async function () {
+            const searchQuery = document.getElementById('search').value;
+            const response = await fetch(`/api/books?search=${searchQuery}`);
+            const books = await response.json();
+
+            const tbody = document.querySelector('#book-list tbody');
+            tbody.innerHTML = ''; // Clear existing rows
+
+            books.forEach(book => {
+                const row = `<tr>
+                    <td>${book.Author}</td>
+                    <td>${book.BookName}</td>
+                    <td>${book.ISBN}</td>
+                    <td>${book.ShelfNumber}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        });
+
+        async function fetchBooks() {
+            const response = await fetch('/api/books');
+            const books = await response.json();
+
+            const tbody = document.querySelector('#book-list tbody');
+            tbody.innerHTML = ''; // Clear existing rows
+
+            books.forEach(book => {
+                const row = `<tr>
+                    <td>${book.Author}</td>
+                    <td>${book.BookName}</td>
+                    <td>${book.ISBN}</td>
+                    <td>${book.ShelfNumber}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        document.getElementById('delete-form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const isbn = document.getElementById('delete-isbn').value.trim();
+
+    if (!isbn) {
+        alert('Please enter a valid ISBN.');
+        return;
+    }
+
+    const response = await fetch(`/api/books/${isbn}`, {
+        method: 'DELETE',
+    });
+
+    if (response.ok) {
+        // alert('Book deleted successfully!');
+        this.reset();
+        fetchBooks();
+    } else if (response.status === 404) {
+        alert('Book not found.');
+    } else {
+        alert('Failed to delete book.');
+    }
+});
+
+        document.addEventListener('DOMContentLoaded', fetchBooks);
+    </script>
+</body>
+</html>
